@@ -2,16 +2,13 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
 	"database/sql"
 	"encoding/json"
-	"encoding/pem"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,10 +25,7 @@ var db *sql.DB
 
 var stripeService payment.PaymentService
 
-var (
-	testPrivateKey string
-	testPublicKey  string
-)
+var DOMAIN_URL string
 
 type User struct {
 	ID           string    `json:"id"`
@@ -83,42 +77,8 @@ func initStripe() {
 	stripeService = payment.NewStripeService()
 }
 
-func genKeyAndSetEnv() {
-	// Generate RSA keys for testing
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic("failed to generate private key: " + err.Error())
-	}
-
-	// Encode private key to PKCS1 format
-	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
-	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: privateKeyBytes,
-	})
-	testPrivateKey = string(privateKeyPEM)
-
-	// Encode public key to PKIX format
-	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		panic("failed to marshal public key: " + err.Error())
-	}
-	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: publicKeyBytes,
-	})
-	testPublicKey = string(publicKeyPEM)
-
-	os.Setenv("JWT_ISSUER", "test-issuer")
-	os.Setenv("ACCESS_TOKEN_TTL", "15m")
-	os.Setenv("REFRESH_TOKEN_TTL", "168h") // 7 days
-	os.Setenv("JWT_PRIVATE_KEY", testPrivateKey)
-	os.Setenv("JWT_PUBLIC_KEY", testPublicKey)
-	os.Setenv("REFRESH_SECRET", "test-secret-key-minimum-32-bytes!!")
-	os.Setenv("STRIPE_SECRET_KEY", "sk_test_51RYL9g2McuOU4O1mHJQj7bfh88vOEBgBOOurZoCUZqKDTWCnH3aOW3CQe3SvLrKMKiN3bJnpaXd84hAliI88Ptmv00sOSWqYoK")
-}
-
 func main() {
+
 	var err error
 	err = godotenv.Load()
 	if err != nil {
@@ -127,9 +87,14 @@ func main() {
 		log.Println("Loaded envs from .env")
 	}
 
+	DOMAIN_URL = os.Getenv("DOMAIN_URL")
+	if DOMAIN_URL == "" {
+		log.Fatal("DOMAIN_URL not found in env")
+	}
+
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
-		log.Fatal("unable to load DATABASE_URL from .env")
+		log.Fatal("DATABASE_URL not found in env")
 	}
 
 	db, err = sql.Open("postgres", connStr)
@@ -142,7 +107,22 @@ func main() {
 		log.Fatal("Failed to initialize database:", err)
 	}
 
-	redis.InitCache("benki_cart", "localhost", 6379)
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "nil" {
+		log.Fatal("REDIS_HOST not found in env")
+	}
+
+	redisPortStr := os.Getenv("REDIS_PORT")
+	if redisPortStr == "" {
+		log.Fatal("REDIS_PORT not found in env")
+	}
+
+	redisPort, err := strconv.Atoi(redisPortStr)
+	if err != nil {
+		log.Fatal("invalid REDIS_PORT: ", err)
+	}
+
+	redis.InitCache("benki_cart", redisHost, redisPort)
 
 	// Initialize Stripe
 	initStripe()
@@ -170,8 +150,13 @@ func main() {
 
 	handler := corsMiddleware(mux)
 
-	log.Println("🛍️  Benki Stores running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", handler))
+	appPort := os.Getenv("APP_PORT")
+	if redisHost == "nil" {
+		log.Fatal("APP_PORT not found in env")
+	}
+
+	log.Println("🛍️  Benki Stores started on 0.0.0.0:" + appPort)
+	log.Fatal(http.ListenAndServe("0.0.0.0:"+appPort, handler))
 }
 
 func initDB() error {
@@ -527,15 +512,11 @@ func handleCheckout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log.Println("r.RequestURI ", r.RequestURI)
-	log.Println("r.RemoteAddr ", r.RemoteAddr)
-	log.Println("r.Host ", r.Host)
-
 	baseOrder := &models.BaseOrder{
 		ID:            orderID,
-		Currency:      "usd",
-		SuccessURL:    "http://localhost:8080/?payment=success&order_id=" + orderID,
-		CancelURL:     "http://localhost:8080/?payment=cancelled",
+		Currency:      "inr",
+		SuccessURL:    DOMAIN_URL,
+		CancelURL:     DOMAIN_URL,
 		CustomerEmail: email,
 		Items:         orderItems,
 		CustomerId:    userID,

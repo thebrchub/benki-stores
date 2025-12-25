@@ -769,7 +769,7 @@
             </div>
             <div id="cartItems"></div>
             <div class="cart-total">
-                <h3>Total: $<span id="cartTotal">0.00</span></h3>
+                <h3>Total: ₹<span id="cartTotal">0.00</span></h3>
                 <button class="checkout-btn" id="checkoutBtn">🎉 Proceed to Checkout</button>
             </div>
         </div>
@@ -788,7 +788,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:8080/api';
+        const API_URL = '/api';
         let token = localStorage.getItem('token');
         let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
         let cart = [];
@@ -956,7 +956,7 @@
                             <div class="product-name">${product.name}</div>
                             <div class="product-description">${product.description}</div>
                             <div class="product-footer">
-                                <div class="product-price">$${(product.unit_price / 100).toFixed(2)}</div>
+                                <div class="product-price">₹${(product.unit_price / 100).toFixed(2)}</div>
                                 <button class="add-to-cart-btn" onclick="addToCart('${product.id}', '${product.name}', ${product.unit_price})">
                                     Add to Cart
                                 </button>
@@ -997,7 +997,7 @@
                     <div class="cart-item">
                         <div class="cart-item-info">
                             <div class="cart-item-name">${emoji} ${item.name}</div>
-                            <div class="cart-item-price">$${(item.price / 100).toFixed(2)} × ${item.quantity}</div>
+                            <div class="cart-item-price">₹${(item.price / 100).toFixed(2)} × ${item.quantity}</div>
                         </div>
                         <div class="cart-item-actions">
                             <button class="qty-btn" onclick="changeQuantity('${item.id}', -1)">-</button>
@@ -1149,12 +1149,12 @@
                                 ${order.items.map(item => `
                                     <div class="order-item">
                                         <span>${item.product_name} × ${item.quantity}</span>
-                                        <strong>$${((item.unit_price * item.quantity) / 100).toFixed(2)}</strong>
+                                        <strong>₹${((item.unit_price * item.quantity) / 100).toFixed(2)}</strong>
                                     </div>
                                 `).join('')}
                             </div>
                             <div style="text-align: right; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                                <strong style="font-size: 1.2rem; color: #1e293b;">Total: $${(order.total_amount / 100).toFixed(2)}</strong>
+                                <strong style="font-size: 1.2rem; color: #1e293b;">Total: ₹${(order.total_amount / 100).toFixed(2)}</strong>
                             </div>
                         </div>
                     `).join('');
