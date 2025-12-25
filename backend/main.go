@@ -550,7 +550,7 @@ func handleCheckout(w http.ResponseWriter, r *http.Request) {
 func handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		http.Error(w, "Failed to read request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -558,7 +558,7 @@ func handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
 
 	basePaymentResponse, err := stripeService.VerifyPayment(payload, signature)
 	if err != nil {
-		http.Error(w, "Webhook verification failed", http.StatusBadRequest)
+		http.Error(w, "Webhook verification failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -575,7 +575,7 @@ func handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
 		basePaymentResponse.OrderId,
 	)
 	if err != nil {
-		http.Error(w, "Failed to update order", http.StatusInternalServerError)
+		http.Error(w, "Failed to update order: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -705,3 +705,4 @@ func respondJSON(w http.ResponseWriter, status int, data any) {
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(data)
 }
+
