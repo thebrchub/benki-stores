@@ -1,0 +1,47 @@
+# Go build artifacts
+/bin/
+/build/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace
+/go.work
+/go.work.sum
+
+# Dependency vendor (ignore only if NOT using vendoring)
+# /vendor/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Certificates / keys
+*.pem
+*.key
+*.crt
+
+# Coverage
+coverage.out
+
+node_modules/
+dist/
