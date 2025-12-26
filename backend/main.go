@@ -136,6 +136,12 @@ func main() {
 	if os.Getenv("USE_LOCAL_HTML") == "TRUE" {
 		mux.HandleFunc("/", serveHome)
 	}
+
+	mux.HandleFunc("/loaderio-bf4d54b609bff8c7bf87278a162cfc8d.txt", func(w http.ResponseWriter, r *http.Request) {
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("loaderio-bf4d54b609bff8c7bf87278a162cfc8d"))
+})
+
 	mux.HandleFunc("/api/auth/signup", handleSignup)
 	mux.HandleFunc("/api/auth/login", handleLogin)
 	mux.HandleFunc("/api/products", handleProducts)
@@ -705,4 +711,5 @@ func respondJSON(w http.ResponseWriter, status int, data any) {
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(data)
 }
+
 
